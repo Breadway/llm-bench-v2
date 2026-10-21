@@ -1,0 +1,7 @@
+title = "Unix socket path ownership"
+crate = "t12_socket_ownership"
+budget = 8
+hidden_budget = 800
+hard = true
+allow_unsafe = false
+forbid = ['\\bunsafe\\b']

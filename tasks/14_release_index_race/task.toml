@@ -1,0 +1,7 @@
+title = "Serialized release index publication"
+crate = "t14_release_index_race"
+budget = 8
+hidden_budget = 422
+hard = true
+allow_unsafe = false
+forbid = ['\\bunsafe\\b']

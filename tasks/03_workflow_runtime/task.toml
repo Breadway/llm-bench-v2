@@ -1,0 +1,7 @@
+title = "Bread event-driven workflow engine"
+crate = "t03_workflow_runtime"
+budget = 23
+hidden_budget = 104
+hard = true
+allow_unsafe = false
+forbid = ['\\bunsafe\\b']

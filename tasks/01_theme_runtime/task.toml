@@ -1,0 +1,7 @@
+title = "Theme tokens and app stylesheet cascade"
+crate = "t01_theme_runtime"
+budget = 279
+hidden_budget = 24
+hard = true
+allow_unsafe = false
+forbid = ['\\bunsafe\\b']

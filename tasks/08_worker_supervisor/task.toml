@@ -1,0 +1,8 @@
+title = "Bounded daemon worker supervision"
+crate = "t08_worker_supervisor"
+budget = 16
+hidden_budget = 521
+hard = true
+timeout = 120
+allow_unsafe = false
+forbid = ['\\b(mpsc|crossbeam|rayon|threadpool)\\b']

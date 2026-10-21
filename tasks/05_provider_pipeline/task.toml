@@ -1,0 +1,7 @@
+title = "Inference backend fallback and embedding pooling"
+crate = "t05_provider_pipeline"
+budget = 17
+hidden_budget = 73
+hard = true
+allow_unsafe = false
+forbid = ['\\bunsafe\\b']

@@ -1,0 +1,7 @@
+title = "Bread event validation and command routing"
+crate = "t02_event_bus"
+budget = 15
+hidden_budget = 1034
+hard = true
+allow_unsafe = false
+forbid = ['\\bunsafe\\b']

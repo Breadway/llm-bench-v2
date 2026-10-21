@@ -1,0 +1,7 @@
+title = "Desktop surface output routing"
+crate = "t07_window_routing"
+budget = 16
+hidden_budget = 74
+hard = true
+allow_unsafe = false
+forbid = ['\\bunsafe\\b']

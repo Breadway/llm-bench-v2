@@ -1,0 +1,8 @@
+title = "Cross-process transcode claims and safe finalization"
+crate = "t10_transcode_claims"
+budget = 22
+hidden_budget = 1742
+hard = true
+timeout = 120
+allow_unsafe = false
+forbid = ['\\bunsafe\\b']

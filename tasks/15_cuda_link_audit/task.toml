@@ -1,0 +1,7 @@
+title = "Detect silently dropped CUDA runtime libraries"
+crate = "t15_cuda_link_audit"
+budget = 10
+hidden_budget = 768
+hard = true
+allow_unsafe = false
+forbid = ['\\bunsafe\\b']

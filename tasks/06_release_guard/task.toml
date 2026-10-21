@@ -1,0 +1,7 @@
+title = "Clean-clone release and lockfile validation"
+crate = "t06_release_guard"
+budget = 17
+hidden_budget = 76
+hard = true
+allow_unsafe = false
+forbid = ['\\bunsafe\\b']

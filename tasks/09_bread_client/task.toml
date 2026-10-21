@@ -1,0 +1,7 @@
+title = "Bread client reconnect and command capability"
+crate = "t09_bread_client"
+budget = 32
+hidden_budget = 527
+hard = true
+allow_unsafe = false
+forbid = ['\\bunsafe\\b']

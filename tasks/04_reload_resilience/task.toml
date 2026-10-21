@@ -1,0 +1,9 @@
+title = "Atomic-replace-safe theme reload"
+crate = "t04_reload_resilience"
+kind = "bugfix"
+budget = 14
+hidden_budget = 111
+hard = true
+timeout = 120
+allow_unsafe = false
+forbid = ['\\bunsafe\\b']

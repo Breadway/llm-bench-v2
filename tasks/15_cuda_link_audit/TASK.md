@@ -1,0 +1,3 @@
+# Detect silently dropped CUDA libraries
+
+Implement the pure build-configuration and audit core for a Rust binary using `tch-rs`. Linux may drop `torch_cuda` under the linker's default `--as-needed` behavior even though the build succeeds. When CUDA is enabled, emit Cargo build-script directives that scope `--no-as-needed` around an explicit `-ltorch_cuda`, then restore `--as-needed`. Audit both directive order and the final dynamic dependency list for `libtorch_cuda`, `libc10_cuda`, `libcudart`, and `libcudnn`, accepting versioned filenames. CPU-only builds need no CUDA dependencies. Do not invoke a linker, inspect the host, add dependencies, or use unsafe code. Preserve the visible API.
