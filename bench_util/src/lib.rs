@@ -214,16 +214,22 @@ macro_rules! check {
 /// `check_eq!(actual, expected, "context {}", x)` adds a line of context.
 #[macro_export]
 macro_rules! check_eq {
-    ($a:expr, $b:expr) => {{
-        let (l, r) = (&$a, &$b);
-        $crate::record(*l == *r, file!(), line!(), concat!(stringify!($a), " == ", stringify!($b)),
-            || format!("left: {:?}\n  right: {:?}", l, r));
-    }};
-    ($a:expr, $b:expr, $($arg:tt)+) => {{
-        let (l, r) = (&$a, &$b);
-        $crate::record(*l == *r, file!(), line!(), concat!(stringify!($a), " == ", stringify!($b)),
-            || format!("{}\n  left: {:?}\n  right: {:?}", format!($($arg)+), l, r));
-    }};
+    ($a:expr, $b:expr) => {
+        // A match scrutinee keeps its temporaries alive for the whole arm, so
+        // `check_eq!(f().as_deref(), ..)` does not hit E0716. A tuple pattern
+        // in a let does not, and that silently made some visible suites
+        // unbuildable for every implementation that returned an owned value.
+        match (&$a, &$b) {
+            (l, r) => $crate::record(*l == *r, file!(), line!(), concat!(stringify!($a), " == ", stringify!($b)),
+                || format!("left: {:?}\n  right: {:?}", l, r)),
+        }
+    };
+    ($a:expr, $b:expr, $($arg:tt)+) => {
+        match (&$a, &$b) {
+            (l, r) => $crate::record(*l == *r, file!(), line!(), concat!(stringify!($a), " == ", stringify!($b)),
+                || format!("{}\n  left: {:?}\n  right: {:?}", format!($($arg)+), l, r)),
+        }
+    };
 }
 
 fn install_hook() {

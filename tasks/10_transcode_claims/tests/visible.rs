@@ -2,8 +2,8 @@ use bench_util::{check, check_eq, section};
 use t10_transcode_claims::*;
 
 fn main() {
-    bench_util::budget(22);
-    section("shared claims and verified replacement", 22, 10, || {
+    bench_util::budget(26);
+    section("shared claims and verified replacement", 26, 10, || {
         let store = Store::new(2, 1);
         store.enqueue("a", Resource::Gpu, 100);
         store.enqueue("b", Resource::Gpu, 100);
@@ -16,6 +16,11 @@ fn main() {
         check_eq!(third.resource, Resource::Cpu);
         check!(first.id != second.id);
         check!(daemon.claim(Resource::Gpu).is_none());
+        check_eq!(store.running_jobs().len(), 3);
+        let counts = store.job_counts();
+        check_eq!(counts.running, 3);
+        check_eq!(counts.done + counts.skipped + counts.failed, 0);
+        check!(store.claim_any().is_none());
         check!(!daemon.enqueue("a", Resource::Gpu, 100));
         check!(daemon.finish(first.id, ResultInfo::verified(80)));
         check!(cli.finish(second.id, ResultInfo::verified(95)));

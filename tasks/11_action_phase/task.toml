@@ -1,6 +1,6 @@
 title = "Bounded game action phase"
 crate = "t11_action_phase"
-budget = 10
+budget = 12
 hidden_budget = 2048
 hard = true
 allow_unsafe = false

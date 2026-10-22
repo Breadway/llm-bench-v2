@@ -139,7 +139,9 @@ impl ClientCore {
         {
             return Err(ClientError::InvalidTopic);
         }
-        self.event(topic, Some(&self.app), payload)
+        // `parts[1]` was just checked against the app name, and borrowing it
+        // keeps the call from holding a shared borrow of `self`.
+        self.event(topic, Some(parts[1]), payload)
     }
     pub fn command(
         &mut self,

@@ -1,6 +1,6 @@
 title = "Serialized release index publication"
 crate = "t14_release_index_race"
-budget = 8
+budget = 9
 hidden_budget = 422
 hard = true
 allow_unsafe = false

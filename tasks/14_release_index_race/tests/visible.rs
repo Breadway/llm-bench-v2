@@ -1,8 +1,8 @@
 use bench_util::{check, check_eq, section};
 use t14_release_index_race::*;
 fn main() {
-    bench_util::budget(8);
-    section("atomic track index and latest publication", 8, 10, || {
+    bench_util::budget(9);
+    section("atomic track index and latest publication", 9, 10, || {
         let p = Publisher::new();
         check_eq!(p.publish("dev", None, "v1", &["a", "b"], false), Ok(1));
         check_eq!(
@@ -14,6 +14,10 @@ fn main() {
             Ok(2)
         );
         check_eq!(p.latest("dev").as_deref(), Some("v2"));
+        check_eq!(
+            p.publish("dev", Some("v2"), "v2", &["x"], false),
+            Err(PublishError::DuplicateRevision)
+        );
         check_eq!(
             p.version_files("dev", "v1"),
             Some(vec!["a".into(), "b".into()])
