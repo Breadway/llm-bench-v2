@@ -1,7 +1,7 @@
 You are working alone in a practical Rust systems benchmark. Implement the tasks in this session.
 Do not spawn agents or delegate work.
 
-There are fifteen crates under `tasks/`. They model pure-Rust components from a reactive desktop
+There are seventeen crates under `tasks/`. They model pure-Rust components from a reactive desktop
 and local-inference ecosystem. They deliberately exclude GTK rendering and hardware access so
 the same behavioral contracts can be evaluated on any machine.
 
@@ -20,6 +20,8 @@ the same behavioral contracts can be evaluated on any machine.
     13_autodiff_lifetime   tracked parameter loads and graph-free validation
     14_release_index_race  serialized track publication and immutable index snapshots
     15_cuda_link_audit     build-script link ordering and CUDA runtime dependency auditing
+    16_frame_codec         incremental length-prefixed decoding across arbitrary chunks
+    17_event_replay        bug fix for subscription removal in a replaying event bus
 
 Read every task's `TASK.md` and visible tests before editing. Each task API is its crate's
 `src/lib.rs`; implement that API without changing signatures. The tests include integration
@@ -31,9 +33,11 @@ hardware, start external services, or read files outside the task tree. Use only
 library and existing crate dependencies. Do not modify tests, manifests, task metadata, support
 crates or the runner. Only edit `tasks/<task>/src/*.rs`.
 
-Task 04 is a bug fix, not a stub. The shipped implementation passes normal write/debounce cases
-but misses atomic file replacement and parent-directory rescan events. Read its failing checks
-and preserve the working behavior while repairing those cases.
+Tasks 04 and 17 are bug fixes, not stubs. Their shipped implementations pass the ordinary
+cases but fail one integration contract: task 04 misses atomic file replacement and
+parent-directory rescan events, and task 17 cannot keep its subscription table consistent
+once entries are removed. Read the failing checks and preserve the working behavior while
+repairing those cases.
 
 Do exactly two passes, then stop:
 
@@ -49,3 +53,4 @@ condition variables rather than busy waiting. A backend marked available but not
 registered is not usable. A padded inference output may be longer than its attention mask.
 Atomic rename changes the file inode. A layer-shell surface must not guess which monitor owns it.
 A local development path patch does not prove a clean CI checkout can build with `--locked`.
+A frame decoder may be fed any number of bytes at a time, including half a header.

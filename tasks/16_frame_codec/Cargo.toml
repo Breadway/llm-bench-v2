@@ -1,0 +1,11 @@
+[package]
+name = "t16_frame_codec"
+version = "0.1.0"
+edition = "2024"
+[dependencies]
+[dev-dependencies]
+bench_util = { path = "../../bench_util" }
+[[test]]
+name = "visible"
+path = "tests/visible.rs"
+harness = false

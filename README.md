@@ -46,7 +46,7 @@ between runs.
 ├── bench_util/        <- counted checks and bounded test sections
 ├── bench_core/        <- build, run, parse and score the suites
 ├── bench/             <- maintainer tool: verify, score, run, watch, tui and board
-├── tasks/NN_name/     <- fifteen standalone Rust tasks
+├── tasks/NN_name/     <- seventeen standalone Rust tasks
 │   ├── TASK.md        <- contract the agent implements
 │   ├── src/lib.rs     <- implementation target, except the bug-fix starter
 │   ├── tests/visible.rs <- visible behavior tests
@@ -55,12 +55,13 @@ between runs.
 └── reference/NN_name/ <- maintainer solutions
 ```
 
-The fifteen tasks cover shared theme tokens and app CSS cascade, Bread event validation and
+The seventeen tasks cover shared theme tokens and app CSS cascade, Bread event validation and
 command routing, event-driven workflows, atomic-replace-safe config reload, inference provider
 fallback and embedding pooling, clean-clone release validation, desktop output routing, bounded
 worker supervision, Bread client reconnect/session state, cross-process transcode claims and safe
 finalization, bounded game action phases, socket path ownership, autodiff graph lifetime,
-serialized release-index publication, and silent CUDA library drop detection.
+serialized release-index publication, silent CUDA library drop detection, incremental frame
+codecs over arbitrary chunk boundaries, and subscription-table repair in a replaying event bus.
 These target integration and failure-recovery work in your Rust projects while remaining
 deterministic on any machine.
 
@@ -96,7 +97,7 @@ The scorer reports:
 - **VISIBLE / HIDDEN**: separate suite scores and their gap, which helps identify overfitting.
 - **INTEGRITY**: changes to non-editable run files. Scoring always uses pristine tests.
 - **RULES**: forbidden shortcuts and unsafe Rust violations.
-- **HARD**: score over all fifteen integration tasks.
+- **HARD**: score over all seventeen integration tasks.
 - **HARNESS**: digest of the exact benchmark revision.
 - **LINT**: Clippy warnings per task.
 - **SAFETY**: Miri results when requested and available.
@@ -126,7 +127,7 @@ Suites run one task at a time by default. `BENCH_JOBS=N` enables parallel explor
 serial default for results you plan to compare because loaded cores can make wall-clock limits
 less predictable.
 
-Per-task budgets total 495 visible checks and 9,860 held-out checks. `bench verify --learn` can
+Per-task budgets total 572 visible checks and 11,118 held-out checks. `bench verify --learn` can
 recalculate them after intentional test changes.
 
 | task | visible | hidden |
@@ -140,12 +141,14 @@ recalculate them after intentional test changes.
 | 07_window_routing | 16 | 74 |
 | 08_worker_supervisor | 16 | 521 |
 | 09_bread_client | 32 | 527 |
-| 10_transcode_claims | 22 | 1,742 |
-| 11_action_phase | 10 | 2,048 |
+| 10_transcode_claims | 26 | 1,742 |
+| 11_action_phase | 12 | 2,048 |
 | 12_socket_ownership | 8 | 800 |
 | 13_autodiff_lifetime | 8 | 1,536 |
-| 14_release_index_race | 8 | 422 |
+| 14_release_index_race | 9 | 422 |
 | 15_cuda_link_audit | 10 | 768 |
+| 16_frame_codec | 24 | 577 |
+| 17_event_replay | 46 | 681 |
 
 ## The test protocol
 

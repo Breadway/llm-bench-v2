@@ -1,0 +1,7 @@
+title = "Incremental length prefixed frame codec"
+crate = "t16_frame_codec"
+budget = 24
+hidden_budget = 577
+hard = true
+allow_unsafe = false
+forbid = ['\bunsafe\b']

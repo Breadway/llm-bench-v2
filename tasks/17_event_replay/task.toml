@@ -1,0 +1,9 @@
+title = "Event replay and subscription removal"
+crate = "t17_event_replay"
+kind = "bugfix"
+budget = 46
+hidden_budget = 681
+hard = true
+timeout = 120
+allow_unsafe = false
+forbid = ['\bunsafe\b']
