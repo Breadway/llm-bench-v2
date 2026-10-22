@@ -58,10 +58,9 @@ fn main() {
                 choose_backend(Backend::Migraphx, &unavailable).selected,
                 Backend::Cpu
             );
+            let choice = choose_backend(Backend::Migraphx, &unavailable);
             check_eq!(
-                choose_backend(Backend::Migraphx, &unavailable)
-                    .fallback_reason
-                    .as_deref(),
+                choice.fallback_reason.as_deref(),
                 Some("Migraphx provider is unavailable")
             );
 
