@@ -79,10 +79,10 @@ enum Cmd {
         #[arg(long, default_value = "harness")]
         md: String,
         /// Hard wall-clock limit in seconds (0 = none).
-        #[arg(long, default_value_t = 10800)]
+        #[arg(long, default_value_t = 2700)]
         timeout: u64,
         /// Cut off after this many seconds without a change (0 = off).
-        #[arg(long, default_value_t = 1800)]
+        #[arg(long, default_value_t = 900)]
         stall: u64,
         /// Seconds between SIGTERM and SIGKILL on a cutoff.
         #[arg(long, default_value_t = 30)]

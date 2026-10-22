@@ -35,12 +35,14 @@ Task 04 is a bug fix, not a stub. The shipped implementation passes normal write
 but misses atomic file replacement and parent-directory rescan events. Read its failing checks
 and preserve the working behavior while repairing those cases.
 
-Do exactly three passes, then stop:
+Do exactly two passes, then stop:
 
-1. Implement all fifteen tasks before running the suite once: `./run_tests.sh`.
-2. Read that run's `FAILURES` section. Fix only the listed checks, then run `./run_tests.sh` once.
-3. Fix only the failures from pass two, run `./run_tests.sh` once more, and report its `SOLVED`
-   and `TOTAL` lines. Do not start a fourth pass.
+1. Implement every task before running the suite once: `./run_tests.sh`.
+2. Read that run's `FAILURES` section. Fix only the listed checks, then run `./run_tests.sh` once
+   more and report its `SOLVED` and `TOTAL` lines. Do not start a third pass.
+
+The whole run has a 45 minute wall clock, and it is cut off after 15 minutes without a change.
+Spend that on the tasks, not on re-reading files you have already read.
 
 A timeout or deadlock is a task failure. The concurrency tests use real threads and require
 condition variables rather than busy waiting. A backend marked available but not successfully

@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use bench_core::{Env, Kind, TaskResult, TaskSpec, Totals};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 use crate::project::{self, Src};
 use crate::rules;
@@ -27,7 +27,15 @@ pub struct Opts {
     pub hidden: bool,
 }
 
-const RUNTIME_FILES: &[&str] = &["Cargo.lock", "agent.log", "RESULT.txt", "result.json", ".run_state", ".tps_state", ".agent_prompt.txt"];
+const RUNTIME_FILES: &[&str] = &[
+    "Cargo.lock",
+    "agent.log",
+    "RESULT.txt",
+    "result.json",
+    ".run_state",
+    ".tps_state",
+    ".agent_prompt.txt",
+];
 
 fn walk(base: &Path, dir: &Path, out: &mut BTreeSet<PathBuf>) {
     let Ok(rd) = fs::read_dir(dir) else { return };
@@ -46,7 +54,10 @@ fn walk(base: &Path, dir: &Path, out: &mut BTreeSet<PathBuf>) {
 }
 
 fn is_src(rel: &Path) -> bool {
-    let c: Vec<_> = rel.components().map(|c| c.as_os_str().to_string_lossy().into_owned()).collect();
+    let c: Vec<_> = rel
+        .components()
+        .map(|c| c.as_os_str().to_string_lossy().into_owned())
+        .collect();
     c.len() >= 4 && c[0] == "tasks" && c[2] == "src"
 }
 
@@ -63,7 +74,10 @@ fn integrity(pristine: &Path, run: &Path) -> (Vec<String>, Vec<String>, Vec<Stri
         let name = rel.to_string_lossy().into_owned();
         // Runtime files are rewritten by a build (`Cargo.lock`) or written by
         // the run itself, so their contents are not part of the contract.
-        let file = rel.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default();
+        let file = rel
+            .file_name()
+            .map(|f| f.to_string_lossy().into_owned())
+            .unwrap_or_default();
         if RUNTIME_FILES.contains(&file.as_str()) {
             continue;
         }
@@ -79,7 +93,10 @@ fn integrity(pristine: &Path, run: &Path) -> (Vec<String>, Vec<String>, Vec<Stri
             continue;
         }
         let name = rel.to_string_lossy().into_owned();
-        let file = rel.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default();
+        let file = rel
+            .file_name()
+            .map(|f| f.to_string_lossy().into_owned())
+            .unwrap_or_default();
         if RUNTIME_FILES.contains(&file.as_str()) || name.ends_with(".md") || name == "Cargo.lock" {
             continue;
         }
@@ -90,19 +107,33 @@ fn integrity(pristine: &Path, run: &Path) -> (Vec<String>, Vec<String>, Vec<Stri
 
 fn lint(tree: &Path, specs: &[TaskSpec], target: &Path) -> Value {
     let mut cmd = Command::new("cargo");
-    cmd.current_dir(tree).env("CARGO_TARGET_DIR", target).env_remove("RUSTFLAGS");
-    cmd.args(["clippy", "--release", "--offline", "--lib", "--keep-going", "--message-format=json"]);
+    cmd.current_dir(tree)
+        .env("CARGO_TARGET_DIR", target)
+        .env_remove("RUSTFLAGS");
+    cmd.args([
+        "clippy",
+        "--release",
+        "--offline",
+        "--lib",
+        "--keep-going",
+        "--message-format=json",
+    ]);
     for s in specs {
         cmd.args(["-p", &s.krate]);
     }
-    let Ok(out) = cmd.stdin(Stdio::null()).output() else { return json!({"available": false}) };
+    let Ok(out) = cmd.stdin(Stdio::null()).output() else {
+        return json!({"available": false});
+    };
     let err = String::from_utf8_lossy(&out.stderr);
     if err.contains("no such command") || err.contains("not installed") {
         return json!({"available": false});
     }
-    let mut per: std::collections::BTreeMap<String, u64> = specs.iter().map(|s| (s.name.clone(), 0)).collect();
+    let mut per: std::collections::BTreeMap<String, u64> =
+        specs.iter().map(|s| (s.name.clone(), 0)).collect();
     for line in String::from_utf8_lossy(&out.stdout).lines() {
-        let Ok(v) = serde_json::from_str::<Value>(line) else { continue };
+        let Ok(v) = serde_json::from_str::<Value>(line) else {
+            continue;
+        };
         if v["reason"] != "compiler-message" {
             continue;
         }
@@ -114,7 +145,10 @@ fn lint(tree: &Path, specs: &[TaskSpec], target: &Path) -> Value {
             continue; // the "N warnings emitted" summary
         }
         let pid = v["package_id"].as_str().unwrap_or("");
-        if let Some(s) = specs.iter().find(|s| pid.contains(&format!("#{}@", s.krate))) {
+        if let Some(s) = specs
+            .iter()
+            .find(|s| pid.contains(&format!("#{}@", s.krate)))
+        {
             *per.get_mut(&s.name).unwrap() += 1;
         }
     }
@@ -122,7 +156,11 @@ fn lint(tree: &Path, specs: &[TaskSpec], target: &Path) -> Value {
 }
 
 fn miri(tree: &Path, specs: &[&TaskSpec], target: &Path) -> Value {
-    let probe = Command::new("cargo").args(["+nightly", "miri", "--version"]).stdout(Stdio::null()).stderr(Stdio::null()).status();
+    let probe = Command::new("cargo")
+        .args(["+nightly", "miri", "--version"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
     if !probe.map(|s| s.success()).unwrap_or(false) {
         return json!({"ran": false, "reason": "miri is not installed"});
     }
@@ -131,7 +169,16 @@ fn miri(tree: &Path, specs: &[&TaskSpec], target: &Path) -> Value {
         let out = Command::new("cargo")
             .current_dir(tree)
             .env("CARGO_TARGET_DIR", target.join("miri"))
-            .args(["+nightly", "miri", "test", "--offline", "-p", &s.krate, "--test", "visible"])
+            .args([
+                "+nightly",
+                "miri",
+                "test",
+                "--offline",
+                "-p",
+                &s.krate,
+                "--test",
+                "visible",
+            ])
             .stdin(Stdio::null())
             .output();
         let verdict = match out {
@@ -186,22 +233,46 @@ struct Measured {
 
 /// Run both suites at one seed. Staging is the caller's job, so a sweep reuses
 /// one built tree instead of rebuilding it per seed.
-fn measure(tree: &Path, target: &Path, specs: &[&TaskSpec], seed: u64, hidden: bool, findings: &rules::Findings) -> Measured {
+fn measure(
+    tree: &Path,
+    target: &Path,
+    specs: &[&TaskSpec],
+    seed: u64,
+    hidden: bool,
+    findings: &rules::Findings,
+) -> Measured {
     let mut env = Env::new(tree);
     env.target_dir = Some(target.to_path_buf());
     env.seed = seed;
     let visible = bench_core::run_suite(&env, specs, "visible");
-    let hs = if hidden { bench_core::run_suite(&env, specs, "hidden") } else { vec![] };
+    let hs = if hidden {
+        bench_core::run_suite(&env, specs, "hidden")
+    } else {
+        vec![]
+    };
     let vt = bench_core::totals(&visible);
     let ht = bench_core::totals(&hs);
-    let (mut solved, mut frac, mut hard_solved, mut hard_frac, mut hard_n) = (0usize, 0.0, 0usize, 0.0, 0usize);
+    let (mut solved, mut frac, mut hard_solved, mut hard_frac, mut hard_n) =
+        (0usize, 0.0, 0usize, 0.0, 0usize);
     let mut tasks = Vec::new();
     let mut rules_gated = Vec::new();
     for (i, s) in specs.iter().enumerate() {
         let v = &visible[i];
         let h = hs.get(i);
         let (hp, hb) = h.map(|h| (h.pass, h.budget)).unwrap_or((0, 0));
-        let mut f = if v.budget + hb == 0 { 0.0 } else { (v.pass + hp) as f64 / (v.budget + hb) as f64 };
+        let mut f = if !v.solved() {
+            // Visible checks are a gate, not credit. A task that cannot pass its
+            // own visible suite has not been implemented, whatever its hidden
+            // number says.
+            0.0
+        } else if h.map(|h| h.solved()).unwrap_or(true) {
+            1.0
+        } else {
+            // Partial hidden credit is capped at half: a near miss is worth
+            // something, but it never gets most of a task.
+            let hf = if hb == 0 { 0.0 } else { hp as f64 / hb as f64 };
+            0.5 * hf
+        };
         let mut ok = v.solved() && h.map(|h| h.solved()).unwrap_or(true);
         // A refactor task ships a correct implementation, so its tests are green
         // before the model touches anything: the rules are what tell "did the
@@ -220,9 +291,11 @@ fn measure(tree: &Path, target: &Path, specs: &[&TaskSpec], seed: u64, hidden: b
             hard_frac += f;
             hard_solved += ok as usize;
         }
-        tasks.push(json!({"task": s.name, "title": s.title, "kind": s.kind.label(), "solved": ok,
+        tasks.push(
+            json!({"task": s.name, "title": s.title, "kind": s.kind.label(), "solved": ok,
             "rules_clean": rules_clean, "fraction": f,
-            "visible": task_json(v), "hidden": h.map(task_json)}));
+            "visible": task_json(v), "hidden": h.map(task_json)}),
+        );
     }
     Measured {
         seed,
@@ -233,7 +306,11 @@ fn measure(tree: &Path, target: &Path, specs: &[&TaskSpec], seed: u64, hidden: b
         solved,
         score: 100.0 * frac / specs.len().max(1) as f64,
         gap: vt.score - ht.score,
-        hard_score: if hard_n > 0 { Some(100.0 * hard_frac / hard_n as f64) } else { None },
+        hard_score: if hard_n > 0 {
+            Some(100.0 * hard_frac / hard_n as f64)
+        } else {
+            None
+        },
         hard_solved,
         tasks,
         rules_gated,
@@ -270,14 +347,27 @@ pub fn evaluate(root: &Path, o: &Opts) -> (i32, String) {
     // rules on the agent's source
     let tr: Vec<_> = specs
         .iter()
-        .map(|s| rules::task_rules(&s.name, &tree.join("tasks").join(&s.name), &root.join("tasks").join(&s.name)))
+        .map(|s| {
+            rules::task_rules(
+                &s.name,
+                &tree.join("tasks").join(&s.name),
+                &root.join("tasks").join(&s.name),
+            )
+        })
         .collect();
     let findings = rules::scan(&tr);
 
     // the suites, once per seed
-    let seeds: Vec<u64> = if o.seeds.is_empty() { vec![o.seed] } else { o.seeds.clone() };
+    let seeds: Vec<u64> = if o.seeds.is_empty() {
+        vec![o.seed]
+    } else {
+        o.seeds.clone()
+    };
     let refs: Vec<&TaskSpec> = specs.iter().collect();
-    let runs: Vec<Measured> = seeds.iter().map(|seed| measure(&tree, &target, &refs, *seed, o.hidden, &findings)).collect();
+    let runs: Vec<Measured> = seeds
+        .iter()
+        .map(|seed| measure(&tree, &target, &refs, *seed, o.hidden, &findings))
+        .collect();
     let m = &runs[0];
     // A sweep of scored passes, for the seed table and result.json.
     let sweep = if runs.len() > 1 {
@@ -293,9 +383,16 @@ pub fn evaluate(root: &Path, o: &Opts) -> (i32, String) {
         None
     };
 
-    let lint_v = if o.clippy { lint(&tree, &specs, &target) } else { json!({"available": false, "skipped": true}) };
+    let lint_v = if o.clippy {
+        lint(&tree, &specs, &target)
+    } else {
+        json!({"available": false, "skipped": true})
+    };
     let miri_v = if o.miri {
-        let unsafe_tasks: Vec<&TaskSpec> = specs.iter().filter(|s| rules::task_rules(&s.name, &s.dir, &s.dir).allow_unsafe).collect();
+        let unsafe_tasks: Vec<&TaskSpec> = specs
+            .iter()
+            .filter(|s| rules::task_rules(&s.name, &s.dir, &s.dir).allow_unsafe)
+            .collect();
         miri(&tree, &unsafe_tasks, &target)
     } else {
         json!({"ran": false, "reason": "not requested (--miri)"})
@@ -307,12 +404,22 @@ pub fn evaluate(root: &Path, o: &Opts) -> (i32, String) {
     // report
     let mut text = String::new();
     use std::fmt::Write as _;
-    let _ = writeln!(text, "{:<22} {:<16} {:<16} STATUS", "TASK", "VISIBLE", "HIDDEN");
-    let _ = writeln!(text, "{:<22} {:<16} {:<16} ------", "----", "-------", "------");
+    let _ = writeln!(
+        text,
+        "{:<22} {:<16} {:<16} STATUS",
+        "TASK", "VISIBLE", "HIDDEN"
+    );
+    let _ = writeln!(
+        text,
+        "{:<22} {:<16} {:<16} ------",
+        "----", "-------", "------"
+    );
     for (i, s) in specs.iter().enumerate() {
         let v = &visible[i];
         let h = hidden.get(i);
-        let hs = h.map(|h| format!("{}/{}", h.pass, h.budget)).unwrap_or("-".into());
+        let hs = h
+            .map(|h| format!("{}/{}", h.pass, h.budget))
+            .unwrap_or("-".into());
         let checks_ok = v.solved() && h.map(|h| h.solved()).unwrap_or(true);
         let rules_clean = !findings.by_task.contains_key(&s.name);
         // `RULES` is the one status the suite cannot produce by itself: every
@@ -321,55 +428,137 @@ pub fn evaluate(root: &Path, o: &Opts) -> (i32, String) {
             "OK".to_string()
         } else if checks_ok {
             "RULES".to_string()
-        } else if v.status != bench_core::Status::Fail {
-            v.status.label().to_string()
+        } else if !v.solved() {
+            // The visible suite is the first thing that can fail, and its status
+            // is the useful one (BUILD ERROR vs FAIL).
+            if v.status == bench_core::Status::Fail {
+                "FAIL".to_string()
+            } else {
+                v.status.label().to_string()
+            }
         } else {
-            "FAIL".to_string()
+            // Visible is green but the task is not done: report the hidden
+            // status instead of the misleading "OK".
+            h.map(|h| h.status.label().to_string())
+                .unwrap_or_else(|| "FAIL".into())
         };
-        let _ = writeln!(text, "{:<22} {:<16} {:<16} {}", s.name, format!("{}/{}", v.pass, v.budget), hs, st);
+        let _ = writeln!(
+            text,
+            "{:<22} {:<16} {:<16} {}",
+            s.name,
+            format!("{}/{}", v.pass, v.budget),
+            hs,
+            st
+        );
     }
     let _ = writeln!(text);
-    let _ = writeln!(text, "VISIBLE: {} / {} passed ({}%)   HIDDEN: {} / {} passed ({}%)", vt.pass, vt.of, vt.pct, ht.pass, ht.of, ht.pct);
-    let all_pct = (100 * (vt.pass + ht.pass)).checked_div(vt.of + ht.of).unwrap_or(0);
-    let _ = writeln!(text, "TOTAL: {} / {} passed ({}%)", vt.pass + ht.pass, vt.of + ht.of, all_pct);
-    let _ = writeln!(text, "SOLVED: {} / {} tasks   SCORE: {:.1} (mean of per-task %; visible {:.1}, hidden {:.1}, gap {:+.1})", solved, specs.len(), score, vt.score, ht.score, gap);
+    let _ = writeln!(
+        text,
+        "VISIBLE: {} / {} passed ({}%)   HIDDEN: {} / {} passed ({}%)",
+        vt.pass, vt.of, vt.pct, ht.pass, ht.of, ht.pct
+    );
+    let all_pct = (100 * (vt.pass + ht.pass))
+        .checked_div(vt.of + ht.of)
+        .unwrap_or(0);
+    let _ = writeln!(
+        text,
+        "TOTAL: {} / {} passed ({}%)",
+        vt.pass + ht.pass,
+        vt.of + ht.of,
+        all_pct
+    );
+    let _ = writeln!(text, "SOLVED: {} / {} tasks   SCORE: {:.1} (visible gates, partial hidden capped at half; visible {:.1}, hidden {:.1}, gap {:+.1})", solved, specs.len(), score, vt.score, ht.score, gap);
     if let Some(hs) = m.hard_score {
         let hard_tasks = specs.iter().filter(|s| s.hard).count();
-        let _ = writeln!(text, "HARD: {hs:.1} ({}/{} solved) - the tasks marked `hard = true`", m.hard_solved, hard_tasks);
+        let _ = writeln!(
+            text,
+            "HARD: {hs:.1} ({}/{} solved) - the tasks marked `hard = true`",
+            m.hard_solved, hard_tasks
+        );
     }
     if !m.rules_gated.is_empty() {
         let n = specs.iter().filter(|s| s.kind == Kind::Refactor).count();
         let _ = writeln!(text, "REFACTOR: {} of {n} pass every check but still break their own rules ({}) - scored 0 until the source obeys them", m.rules_gated.len(), m.rules_gated.join(", "));
     }
-    let _ = writeln!(text, "HARNESS: {digest}  (a score is only comparable with the same digest)");
+    let _ = writeln!(
+        text,
+        "HARNESS: {digest}  (a score is only comparable with the same digest)"
+    );
     if !o.hidden {
-        let _ = writeln!(text, "HIDDEN: skipped (--no-hidden) - not comparable with a full run");
+        let _ = writeln!(
+            text,
+            "HIDDEN: skipped (--no-hidden) - not comparable with a full run"
+        );
     }
     if let Some(sweep) = &sweep {
         let _ = writeln!(text);
-        let _ = writeln!(text, "SEED SWEEP (both suites re-run per seed; staging is shared)");
-        let _ = writeln!(text, "{:>10} {:>7} {:>8} {:>9} {:>8}", "SEED", "SCORE", "SOLVED", "VISIBLE", "HIDDEN");
+        let _ = writeln!(
+            text,
+            "SEED SWEEP (both suites re-run per seed; staging is shared)"
+        );
+        let _ = writeln!(
+            text,
+            "{:>10} {:>7} {:>8} {:>9} {:>8}",
+            "SEED", "SCORE", "SOLVED", "VISIBLE", "HIDDEN"
+        );
         for r in &runs {
-            let _ = writeln!(text, "{:>10} {:>7.1} {:>8} {:>9.1} {:>8.1}", r.seed, r.score, format!("{}/{}", r.solved, specs.len()), r.vt.score, r.ht.score);
+            let _ = writeln!(
+                text,
+                "{:>10} {:>7.1} {:>8} {:>9.1} {:>8.1}",
+                r.seed,
+                r.score,
+                format!("{}/{}", r.solved, specs.len()),
+                r.vt.score,
+                r.ht.score
+            );
         }
-        let _ = writeln!(text, "{:>10} {:>7.1}   (min {:.1}, max {:.1})", "mean", sweep["mean"].as_f64().unwrap_or(0.0), sweep["min"].as_f64().unwrap_or(0.0), sweep["max"].as_f64().unwrap_or(0.0));
+        let _ = writeln!(
+            text,
+            "{:>10} {:>7.1}   (min {:.1}, max {:.1})",
+            "mean",
+            sweep["mean"].as_f64().unwrap_or(0.0),
+            sweep["min"].as_f64().unwrap_or(0.0),
+            sweep["max"].as_f64().unwrap_or(0.0)
+        );
     }
     let integ = if integrity_clean {
         "clean".to_string()
     } else {
         let mut bits = vec![];
-        if !modified.is_empty() { bits.push(format!("modified: {}", modified.join(", "))); }
-        if !deleted.is_empty() { bits.push(format!("deleted: {}", deleted.join(", "))); }
-        if !added.is_empty() { bits.push(format!("added: {}", added.join(", "))); }
-        format!("TAMPERED ({}) - ignored, scored against pristine tests", bits.join("; "))
+        if !modified.is_empty() {
+            bits.push(format!("modified: {}", modified.join(", ")));
+        }
+        if !deleted.is_empty() {
+            bits.push(format!("deleted: {}", deleted.join(", ")));
+        }
+        if !added.is_empty() {
+            bits.push(format!("added: {}", added.join(", ")));
+        }
+        format!(
+            "TAMPERED ({}) - ignored, scored against pristine tests",
+            bits.join("; ")
+        )
     };
     let lint_line = match lint_v["available"].as_bool() {
-        Some(true) => match lint_v["warnings"].as_u64().unwrap_or(0) { 0 => "clean".to_string(), n => format!("{n} clippy warning(s)") },
+        Some(true) => match lint_v["warnings"].as_u64().unwrap_or(0) {
+            0 => "clean".to_string(),
+            n => format!("{n} clippy warning(s)"),
+        },
         _ => "n/a".to_string(),
     };
     let safety_line = if miri_v["ran"] == true {
-        let bad: Vec<String> = miri_v["per_task"].as_object().unwrap().iter().filter(|(_, v)| *v != "clean").map(|(k, v)| format!("{k}: {}", v.as_str().unwrap_or("?"))).collect();
-        if bad.is_empty() { "clean (miri)".to_string() } else { format!("UB/FAILED ({})", bad.join("; ")) }
+        let bad: Vec<String> = miri_v["per_task"]
+            .as_object()
+            .unwrap()
+            .iter()
+            .filter(|(_, v)| *v != "clean")
+            .map(|(k, v)| format!("{k}: {}", v.as_str().unwrap_or("?")))
+            .collect();
+        if bad.is_empty() {
+            "clean (miri)".to_string()
+        } else {
+            format!("UB/FAILED ({})", bad.join("; "))
+        }
     } else {
         format!("n/a ({})", miri_v["reason"].as_str().unwrap_or(""))
     };
@@ -379,13 +568,19 @@ pub fn evaluate(root: &Path, o: &Opts) -> (i32, String) {
         let mut any = false;
         for (label, rows) in [("visible", visible), ("hidden", hidden)] {
             for r in rows.iter() {
-                if r.detail.is_empty() && r.fail == 0 { continue; }
+                if r.detail.is_empty() && r.fail == 0 {
+                    continue;
+                }
                 any = true;
                 let _ = writeln!(text, "== {} [{label}] ==", r.task);
-                for d in r.detail.iter().take(20) { let _ = writeln!(text, "{d}"); }
+                for d in r.detail.iter().take(20) {
+                    let _ = writeln!(text, "{d}");
+                }
             }
         }
-        if !any { let _ = writeln!(text, "(none)"); }
+        if !any {
+            let _ = writeln!(text, "(none)");
+        }
     }
     let _ = writeln!(text);
     let _ = writeln!(text, "INTEGRITY: {integ}");
@@ -394,7 +589,8 @@ pub fn evaluate(root: &Path, o: &Opts) -> (i32, String) {
     let _ = writeln!(text, "SAFETY: {safety_line}");
 
     if let Some(path) = &o.json {
-        let meta: serde_json::Map<String, Value> = o.meta.iter().map(|(k, v)| (k.clone(), json!(v))).collect();
+        let meta: serde_json::Map<String, Value> =
+            o.meta.iter().map(|(k, v)| (k.clone(), json!(v))).collect();
         let doc = json!({
             "schema": 3,
             "run_dir": o.run_dir,

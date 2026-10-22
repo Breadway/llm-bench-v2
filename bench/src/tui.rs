@@ -97,8 +97,8 @@ fn default_options() -> BTreeMap<String, String> {
     [
         ("backend", "opencode"),
         ("md", "harness"),
-        ("timeout", "10800"),
-        ("stall", "1800"),
+        ("timeout", "2700"),
+        ("stall", "900"),
         ("hidden", "on"),
         ("clippy", "on"),
         ("server", ""),

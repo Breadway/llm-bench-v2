@@ -64,7 +64,8 @@ serialized release-index publication, and silent CUDA library drop detection.
 These target integration and failure-recovery work in your Rust projects while remaining
 deterministic on any machine.
 
-A task is solved when its visible suite passes every check. `bench score` copies only each task's
+A task is solved when both its visible and held-out suites pass every check, and the visible suite
+is a gate for any credit at all. `bench score` copies only each task's
 `src/` into a fresh copy of the tests and manifests, so editing tests in a run cannot change the
 score.
 
@@ -87,8 +88,11 @@ cargo run --release --offline -p bench -- verify          # maintainer: the suit
 
 The scorer reports:
 
-- **SOLVED / SCORE**: tasks fully solved and mean per-task pass fraction over both suites. Every
-  task has equal weight regardless of its number of checks.
+- **SOLVED / SCORE**: tasks fully solved and a per-task score where the visible suite is a gate.
+  A task that fails any visible check scores zero, however well its hidden suite did. A task that
+  passes visible but misses hidden checks earns at most half credit, scaled by its hidden pass
+  fraction. Full credit needs every check in both suites. Every task has equal weight regardless
+  of its number of checks.
 - **VISIBLE / HIDDEN**: separate suite scores and their gap, which helps identify overfitting.
 - **INTEGRITY**: changes to non-editable run files. Scoring always uses pristine tests.
 - **RULES**: forbidden shortcuts and unsafe Rust violations.
