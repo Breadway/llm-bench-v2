@@ -17,7 +17,7 @@ fn main() {
         check_eq!(result.actions, 0);
         check!(result.forced_end);
         check_eq!(run_phase(4, 5, &[], 20).actions, 0);
-        let ended = run_phase(3, 5, &[Action::End], 20);
+        let ended = run_phase(3, 5, &[Action::END], 20);
         check_eq!(ended.actions, 0);
         check_eq!(ended.hand_size, 3);
     });

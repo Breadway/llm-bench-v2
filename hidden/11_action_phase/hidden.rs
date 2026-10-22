@@ -10,7 +10,7 @@ fn main() {
             let mixed = [
                 Action::new(usize::MAX, usize::MAX - 1),
                 Action::new(0, 2),
-                Action::End,
+                Action::END,
             ];
             for n in 0..512 {
                 let cap = n % 31;

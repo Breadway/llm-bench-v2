@@ -402,9 +402,16 @@ fn parse_output(spec: &TaskSpec, test: &str, out: &str) -> TaskResult {
         let f: Vec<&str> = line.split_whitespace().collect();
         if let Some(rest) = line.strip_prefix("BENCH-BUDGET ") {
             declared = rest.trim().parse().unwrap_or(0);
-        } else if line.starts_with("BENCH-SECTION ") && f.len() == 5 {
-            let n = |i: usize| f[i].parse().unwrap_or(0);
-            sections.push(SectionResult { name: f[1].into(), pass: n(2), fail: n(3), budget: n(4) });
+        } else if let Some(rest) = line.strip_prefix("BENCH-SECTION ") {
+            // Section names contain spaces, so take the three counters from the
+            // right and keep everything before them as the name. Splitting on
+            // whitespace and requiring five fields silently dropped every
+            // multi-word section, which is all of them.
+            let parts: Vec<&str> = rest.rsplitn(4, ' ').collect();
+            if parts.len() == 4 {
+                let n = |i: usize| parts[i].parse().unwrap_or(0);
+                sections.push(SectionResult { name: parts[3].into(), pass: n(2), fail: n(1), budget: n(0) });
+            }
         } else if line.starts_with("BENCH-TOTAL ") && f.len() == 4 {
             let n = |i: usize| f[i].parse().unwrap_or(0);
             total = Some((n(1), n(2), n(3)));
@@ -631,6 +638,15 @@ mod tests {
         BENCH-SECTION first 3 0 3\n\
         BENCH-SECTION second 1 0 1\n\
         BENCH-TOTAL 4 0 4\n";
+
+    #[test]
+    fn parses_section_names_with_spaces() {
+        let out = "BENCH-SECTION reconnect state, replayed subscriptions 3 1 4\nBENCH-TOTAL 3 1 4\n";
+        let r = parse_output(&spec("a", 4, 0), "visible", out);
+        assert_eq!(r.sections.len(), 1);
+        assert_eq!(r.sections[0].name, "reconnect state, replayed subscriptions");
+        assert_eq!((r.sections[0].pass, r.sections[0].fail, r.sections[0].budget), (3, 1, 4));
+    }
 
     #[test]
     fn parses_a_clean_run() {

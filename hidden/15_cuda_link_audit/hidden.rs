@@ -34,7 +34,7 @@ fn main() {
                     .collect::<Vec<_>>();
                 check!(audit_link(true, &plan, &deps).is_err());
             }
-            for n in 0..256 {
+            for _ in 0..256 {
                 let mut plan = plan_link("/libtorch", true);
                 let a = plan
                     .iter()

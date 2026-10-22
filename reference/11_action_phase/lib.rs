@@ -12,8 +12,7 @@ impl Action {
             end: false,
         }
     }
-    #[allow(non_upper_case_globals)]
-    pub const End: Self = Self {
+    pub const END: Self = Self {
         draw: 0,
         discard: 0,
         end: true,
