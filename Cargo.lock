@@ -408,6 +408,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "t16_frame_codec"
+version = "0.1.0"
+dependencies = [
+ "bench_util",
+]
+
+[[package]]
+name = "t17_event_replay"
+version = "0.1.0"
+dependencies = [
+ "bench_util",
+]
+
+[[package]]
 name = "toml"
 version = "0.9.12+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -192,6 +192,38 @@ fn miri(tree: &Path, specs: &[&TaskSpec], target: &Path) -> Value {
     json!({"ran": true, "per_task": per})
 }
 
+/// Per-task credit for the headline score. The visible suite is a gate, not
+/// credit; a task that cannot pass it has not been implemented. Full credit
+/// needs every hidden check too, and a near miss is capped at half a task.
+fn credit(visible_solved: bool, hidden_solved: bool, hidden_fraction: f64) -> f64 {
+    if !visible_solved {
+        0.0
+    } else if hidden_solved {
+        1.0
+    } else {
+        0.5 * hidden_fraction
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::credit;
+
+    #[test]
+    fn visible_is_a_gate() {
+        assert_eq!(credit(false, false, 0.0), 0.0);
+        assert_eq!(credit(false, false, 0.99), 0.0);
+    }
+
+    #[test]
+    fn only_a_full_pass_earns_full_credit() {
+        assert_eq!(credit(true, true, 1.0), 1.0);
+        assert_eq!(credit(true, false, 1.0), 0.5);
+        assert_eq!(credit(true, false, 0.99), 0.495);
+        assert_eq!(credit(true, false, 0.0), 0.0);
+    }
+}
+
 fn task_json(r: &TaskResult) -> Value {
     json!({
         "status": r.status.label(), "pass": r.pass, "fail": r.fail, "budget": r.budget, "secs": r.secs,
@@ -260,19 +292,9 @@ fn measure(
         let v = &visible[i];
         let h = hs.get(i);
         let (hp, hb) = h.map(|h| (h.pass, h.budget)).unwrap_or((0, 0));
-        let mut f = if !v.solved() {
-            // Visible checks are a gate, not credit. A task that cannot pass its
-            // own visible suite has not been implemented, whatever its hidden
-            // number says.
-            0.0
-        } else if h.map(|h| h.solved()).unwrap_or(true) {
-            1.0
-        } else {
-            // Partial hidden credit is capped at half: a near miss is worth
-            // something, but it never gets most of a task.
-            let hf = if hb == 0 { 0.0 } else { hp as f64 / hb as f64 };
-            0.5 * hf
-        };
+        let hidden_solved = h.map(|h| h.solved()).unwrap_or(true);
+        let hidden_fraction = if hb == 0 { 0.0 } else { hp as f64 / hb as f64 };
+        let mut f = credit(v.solved(), hidden_solved, hidden_fraction);
         let mut ok = v.solved() && h.map(|h| h.solved()).unwrap_or(true);
         // A refactor task ships a correct implementation, so its tests are green
         // before the model touches anything: the rules are what tell "did the
